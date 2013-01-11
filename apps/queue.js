@@ -12,7 +12,7 @@ var     cluster = require('cluster')
     ,   Job = kue.Job;
 
 kue.redis.createClient = function() {
-    return redis;
+    return require('redis').createClient(config.db.port, config.db.host);
 };
 
 var jobs = kue.createQueue();
