@@ -80,5 +80,5 @@ function actionHook(req, res) {
 }
 
 
-app.post('/project', projectHook);
+app.post('/gb-sync-project', projectHook);
 app.post('/:project/action/:event', actionHook);
