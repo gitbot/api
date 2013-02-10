@@ -65,6 +65,7 @@ var responseError = function(req, res, next) {
 };
 
 app.configure(function() {
+    app.enable('trust proxy');
     app.use(responseError);
     app.use(express.bodyParser());
     app.use(express.logger('dev')); // TODO: Get this from config
