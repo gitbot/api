@@ -46,13 +46,23 @@ function actionHook(req, res) {
             function findAction(done) {
                 project.findAction(proj, event, repo, branch, done);
             },
-    
-            function triggerAction(action, done) {
+
+            function getAuthUser(action, done) {
                 if (!action) {
                     return done('Cannot find an action for the received hook.');
                 }
+                project.getAuthUser(proj, function(err, result) {
+                    if (err) done(err);
+                    else {
+                        done (null, result, action);
+                    }
+                });
+            },
+        
+            function triggerAction(authUser, action, done) {
                 
                 jobs.create('action:trigger', {
+                    authUser: authUser,
                     project: proj,
                     action: action,
                     repo: repo,
@@ -60,19 +70,13 @@ function actionHook(req, res) {
                     sha: sha
                 }).save();
 
-                project.getAuthUser(proj, function(err, result) {
-                    if (err) done(err);
-                    else {
-                        done (null, result, action);
-                    }
-
-                });
+                done(null, authUser, action);
             },
        
             function setStatus(authUser, action, done) {
                 githubModel.setStatus(authUser.token, repo, sha, {
                     state: 'pending',
-                    description: 'Action triggered.'
+                    description: 'Gitbot:: New build triggered.'
                 }, done);
             }
         ],
@@ -86,5 +90,57 @@ function actionHook(req, res) {
 }
 
 
+function setStatus(job, data) {
+    githubModel.setStatus(job.authUser.token,
+                    job.repo, job.sha, data, function(err) {
+        if (err) {
+            // TODO: Handle this gracefully.
+            job.log(err);
+            console.error('Error occurred when setting status.');
+            console.error(err);
+        }
+    });
+}
+
+function actionStatusHook(req, res) {
+    var jobId = req.params.jobId;
+    var status = req.body;
+    jobs.get(jobId, function(err, job) {
+        if (err) {
+            // TODO: Handle this gracefully.
+            console.error(err);
+        } else {
+            if (status.state === 'complete') {
+            
+                job.complete();
+                setStatus(job, {
+                    state: 'success',
+                    description: status.message,
+                    url: status.url
+                });
+            } else if (status.state === 'working') {
+             
+                job.log(status.message);
+                setStatus(job, {
+                    state: 'pending',
+                    description: status.message,
+                    url: status.url || null
+                });
+
+            } else if (status.state === 'error' || status.state === 'failure') {
+                
+                job.log('An error occurred when processing the job.[' + status.message);
+                job.failed();
+                setStatus(job, {
+                    state: status.state,
+                    description: status.message,
+                    url: status.url || null
+                });
+            }
+        }
+    });
+}
+
 app.post('/gb-sync-project/action/:event', projectHook);
 app.post('/:project/action/:event', actionHook);
+app.post('/job/:jobId/status', actionStatusHook);

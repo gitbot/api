@@ -61,4 +61,9 @@ if (cluster.isMaster) {
     jobs.process('project:clean', function(job, done) {
         project.clean(job.data.token, job.data.username, job.data.repo, done);
     });
+
+    jobs.process('action:trigger', function(job, done) {
+        job.status_url = config.statusReceiver.replace('{jobId}', job.id);
+        project.triggerAction(job, done);
+    });
 }
