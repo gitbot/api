@@ -7,6 +7,7 @@ module.exports.listen = function(app) {
     io.sockets.on('connection', function(socket) {
     socket.on("init", function(username) {
             var     userReady = username + ':ready'
+                ,   projectReady = username + ':project:ready'
                 ,   redis = require('redis').createClient(config.db.port, config.db.host);
             redis
                 .on("error", function (err) {
@@ -14,10 +15,13 @@ module.exports.listen = function(app) {
                 })
                 .on("connect", function() {
                     redis.subscribe(userReady);
+                    redis.subscribe(projectReady);
                 })
                 .on("message", function(channel, message) {
                     if (channel === userReady) {
                         socket.volatile.emit('ready');
+                    } else if (channel === projectReady) {
+                        socket.volatile.emit('projectReady');
                     }
                 });
             socket.on("disconnect", function() {

@@ -40,7 +40,14 @@ if (cluster.isMaster) {
             job.remove(function(err){
                 if (err) throw err;
             });
-            redis.publish(job.data.username + ':ready', {success: true});
+            if (job.id === 'user:sync') {
+                redis.publish(job.data.username + ':ready', {success: true});
+            } else if (job.id === 'project:sync' ||
+                        job.id === 'project:autosync' ||
+                        job.id === 'project:clean' ) {
+                redis.publish(job.data.username + ':project:ready', {success: true});
+            }
+            
         });
     });
 
