@@ -12,7 +12,8 @@ module.exports.listen = function(app) {
         ,   projectReady = ':project:ready'
         ,   projectReadyPattern = '*' + projectReady
         ,   io = require('socket.io').listen(app, conf)
-        ,   socketMap = {};
+        ,   socketMap = {}
+        ,   pendingMessages = {};
 
     var emit = function(channel, suffix, message) {
         var username = channel.replace(suffix, '');
@@ -21,6 +22,9 @@ module.exports.listen = function(app) {
             for (var socket in sockets) {
                 socket.volatile.emit(message);
             }
+        } else {
+            var pending = pendingMessages[username] || [];
+            pending.push(message);
         }
     };
     
@@ -58,6 +62,14 @@ module.exports.listen = function(app) {
             var userSockets = socketMap[username] || [];
             userSockets.push(socket);
             socketMap[username] = userSockets;
+            var pending = pendingMessages[username] || [];
+            pendingMessages[username] = [];
+            if (pending.length) {
+                for (var message in pending) {
+                    socket.volatile.emit(message);
+                }
+            }
+
         });
         socket.on("disconnect", function() {
             console.log("Socket disconnected");
