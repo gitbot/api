@@ -6,14 +6,17 @@ module.exports.listen = function(app) {
 
     io.sockets.on('connection', function(socket) {
     socket.on("init", function(username) {
+            console.log("Got init event");
             var     userReady = username + ':ready'
                 ,   projectReady = username + ':project:ready'
                 ,   redis = require('redis').createClient(config.db.port, config.db.host);
             redis
                 .on("error", function (err) {
+                    console.log('Redis error.');
                     console.error(err);
                 })
                 .on("connect", function() {
+                    console.log('Redis connected. Subscribing.');
                     redis.subscribe(userReady);
                     redis.subscribe(projectReady);
                 })
