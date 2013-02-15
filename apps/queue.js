@@ -32,6 +32,7 @@ if (cluster.isMaster) {
 
     cluster.on('exit', function(worker) {
         console.log('worker ' + worker.process.pid + ' died');
+        cluster.fork();
     });
 
     jobs.on('job complete', function(id) {
@@ -40,11 +41,14 @@ if (cluster.isMaster) {
             job.remove(function(err){
                 if (err) throw err;
             });
+            console.log('Job [' + job.id + '] complete');
             if (job.id === 'user:sync') {
+                console.log('User sync complete');
                 redis.publish(job.data.username + ':ready', {success: true});
             } else if (job.id === 'project:sync' ||
                         job.id === 'project:autosync' ||
                         job.id === 'project:clean' ) {
+                console.log('Project job complete');
                 redis.publish(job.data.username + ':project:ready', {success: true});
             }
             
