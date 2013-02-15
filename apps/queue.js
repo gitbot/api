@@ -4,6 +4,7 @@ var     cluster = require('cluster')
     ,   githubModel = new GithubModel(config.github)
     ,   kue = require('kue')
     ,   redis = require('redis').createClient(config.db.port, config.db.host)
+    ,   redisPub = require('redis').createClient(config.db.port, config.db.host)
     ,   User = require('../lib/model/account').User
     ,   user = new User(redis, githubModel)
     ,   ping  = require('../lib/ping')
@@ -44,15 +45,13 @@ if (cluster.isMaster) {
             console.log('Job [' + job.type + ':' + job.id + '] complete');
             if (job.type === 'user:sync') {
                 console.log('User sync job complete');
-                redis.publish(job.data.username + ':ready', "ready");
+                redisPub.publish(job.data.username + ':user:ready', "ready");
             } else if (job.type === 'project:sync' ||
                         job.type === 'project:autosync' ||
                         job.type === 'project:clean' ) {
                 console.log('Project sync job complete');
-
-                redis.publish(job.data.username + ':project:ready', "ready");
+                redisPub.publish(job.data.username + ':project:ready', "ready");
             }
-            
         });
     });
 
