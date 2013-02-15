@@ -18,6 +18,7 @@ module.exports.listen = function(app) {
                     redis.subscribe(projectReady);
                 })
                 .on("message", function(channel, message) {
+                    console.log('Message received: channel=' + channel + ',msg=' + message)
                     if (channel === userReady) {
                         socket.volatile.emit('ready');
                     } else if (channel === projectReady) {
@@ -25,6 +26,7 @@ module.exports.listen = function(app) {
                     }
                 });
             socket.on("disconnect", function() {
+                console.log("Socket disconnected");
                 redis.quit();
             });
         });
