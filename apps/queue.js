@@ -44,12 +44,13 @@ if (cluster.isMaster) {
             console.log('Job [' + job.type + ':' + job.id + '] complete');
             if (job.type === 'user:sync') {
                 console.log('User sync job complete');
-                redis.publish(job.data.username + ':ready', {success: true});
+                redis.publish(job.data.username + ':ready', "ready");
             } else if (job.type === 'project:sync' ||
                         job.type === 'project:autosync' ||
                         job.type === 'project:clean' ) {
                 console.log('Project sync job complete');
-                redis.publish(job.data.username + ':project:ready', {success: true});
+
+                redis.publish(job.data.username + ':project:ready', "ready");
             }
             
         });
