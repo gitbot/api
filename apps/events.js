@@ -41,6 +41,7 @@ module.exports.listen = function(app) {
             });
 
         };
+        pubsub();
         socket.on("init", function(username) {
             console.log("Got init event");
             data.username = username;
