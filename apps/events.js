@@ -15,6 +15,25 @@ module.exports.listen = function(app) {
         ,   socketMap = {}
         ,   pendingMessages = {};
 
+    io.configure('production', function(){
+        io.enable('browser client minification');  // send minified client
+        io.enable('browser client etag');          // apply etag caching logic based on version number
+        io.enable('browser client gzip');          // gzip the file
+        io.set('log level', 1);
+
+        io.set('transports', [
+                'websocket'
+            ,   'flashsocket'
+            ,   'htmlfile'
+            ,   'xhr-polling'
+            ,   'jsonp-polling'
+        ]);
+    });
+
+    io.configure('development', function(){
+        io.set('transports', ['websocket']);
+    });
+
     var emit = function(channel, suffix, message) {
         var username = channel.replace(suffix, '');
         var sockets = socketMap[username];
