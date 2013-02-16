@@ -48,34 +48,22 @@ module.exports.listen = function(app) {
         }
     };
     
-    var pubsub = function() {
-        console.log('Subscribing to ' + userReady);
-        sub.psubscribe('*' + userReady);
-        console.log('Subscribing to ' + projectReady);
-        sub.psubscribe('*' + projectReady);
-        sub.on("end", function () {
-            console.log('Redis disconnected.');
-            sub.punsubscribe('*' + userReady);
-            sub.punsubscribe('*' + projectReady);
-            sub = redis.createClient(config.db.port, config.db.host);
-            pubsub();
-        }).on("error", function (err) {
-            console.log('Redis error.');
-            console.error(err);
-        }).on("pmessage", function(pattern, channel, message) {
-            console.log('Message received: channel=' + channel +
-                                ',msg=' + message);
-            if (pattern === userReadyPattern) {
-                emit(channel, userReady, 'ready');
-            } else if (pattern === projectReady) {
-                emit(channel, projectReady, 'ready');
-            }
-        });
-
-    };
-
-    pubsub();
-
+    console.log('Subscribing to ' + userReady);
+    sub.psubscribe('*' + userReady);
+    console.log('Subscribing to ' + projectReady);
+    sub.psubscribe('*' + projectReady);
+    sub.on("error", function (err) {
+        console.log('Redis error.');
+        console.error(err);
+    }).on("pmessage", function(pattern, channel, message) {
+        console.log('Message received: channel=' + channel +
+                            ',msg=' + message);
+        if (pattern === userReadyPattern) {
+            emit(channel, userReady, 'ready');
+        } else if (pattern === projectReady) {
+            emit(channel, projectReady, 'ready');
+        }
+    });
     io.sockets.on('connection', function(socket) {
         socket.on("init", function(username) {
             console.log("Got init event");
