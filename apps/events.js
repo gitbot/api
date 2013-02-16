@@ -76,11 +76,13 @@ module.exports.listen = function(app) {
     pubsub();
 
     io.sockets.on('connection', function(socket) {
+        var socketUser = null;
         socket.on("init", function(username) {
             console.log("Got init event");
             var userSockets = socketMap[username] || [];
             userSockets.push(socket);
             socketMap[username] = userSockets;
+            socketUser = username;
             var pending = pendingMessages[username] || [];
             pendingMessages[username] = [];
             if (pending.length) {
@@ -92,8 +94,8 @@ module.exports.listen = function(app) {
         });
         socket.on("disconnect", function() {
             console.log("Socket disconnected");
-            if (redis) {
-                redis.quit();
+            if (socketUser && socketMap[socketUser]) {
+                socketMap[socketUser].remove(socket);
             }
         });
     });
