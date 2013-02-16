@@ -38,9 +38,9 @@ module.exports.listen = function(app) {
         var username = channel.replace(suffix, '');
         var sockets = socketMap[username];
         if (sockets) {
-            for (var socket in sockets) {
+            sockets.forEach(function(socket) {
                 socket.emit(message);
-            }
+            });
         } else {
             var pending = pendingMessages[username] || [];
             pending.push(message);
@@ -73,9 +73,9 @@ module.exports.listen = function(app) {
             socketMap[username] = userSockets;
             var pending = pendingMessages[username] || [];
             pendingMessages[username] = [];
-            for (var message in pending) {
+            pending.forEach(function(message) {
                 socket.emit(message);
-            }
+            });
         });
         socket.on("disconnect", function() {
             console.log("Socket disconnected");
