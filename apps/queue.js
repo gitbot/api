@@ -4,7 +4,6 @@ var     cluster = require('cluster')
     ,   githubModel = new GithubModel(config.github)
     ,   kue = require('kue')
     ,   redis = require('redis').createClient(config.db.port, config.db.host)
-    ,   redisPub = require('redis').createClient(config.db.port, config.db.host)
     ,   User = require('../lib/model/account').User
     ,   user = new User(redis, githubModel)
     ,   ping  = require('../lib/ping')
@@ -20,7 +19,8 @@ var jobs = kue.createQueue();
 
 
 if (cluster.isMaster) {
-
+    var redisPub = require('redis').createClient(
+                        config.db.port, config.db.host);
     var numCPUs = require('os').cpus().length;
     for (var i = 0; i < numCPUs; i++) {
         cluster.fork();
