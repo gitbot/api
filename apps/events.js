@@ -39,11 +39,12 @@ module.exports.listen = function(app) {
         var sockets = socketMap[username];
         if (sockets) {
             for (var socket in sockets) {
-                socket.volatile.emit(message);
+                socket.emit(message);
             }
         } else {
             var pending = pendingMessages[username] || [];
             pending.push(message);
+            pendingMessages[username] = pending;
         }
     };
     
@@ -76,26 +77,23 @@ module.exports.listen = function(app) {
     pubsub();
 
     io.sockets.on('connection', function(socket) {
-        var socketUser = null;
         socket.on("init", function(username) {
             console.log("Got init event");
+            socket.set('username', username);
             var userSockets = socketMap[username] || [];
             userSockets.push(socket);
             socketMap[username] = userSockets;
-            socketUser = username;
             var pending = pendingMessages[username] || [];
             pendingMessages[username] = [];
-            if (pending.length) {
-                for (var message in pending) {
-                    socket.volatile.emit(message);
-                }
+            for (var message in pending) {
+                socket.emit(message);
             }
-
         });
         socket.on("disconnect", function() {
             console.log("Socket disconnected");
-            if (socketUser && socketMap[socketUser]) {
-                socketMap[socketUser].remove(socket);
+            var username = socket.get('username');
+            if (username && socketMap[username]) {
+                socketMap[username].remove(socket);
             }
         });
     });
