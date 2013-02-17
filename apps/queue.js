@@ -75,6 +75,12 @@ if (cluster.isMaster) {
 
     jobs.process('action:trigger', function(job, done) {
         job.status_url = config.statusReceiver.replace('{jobId}', job.id);
-        project.triggerAction(job, done);
+        project.triggerAction(job, function(err, res) {
+            if (err) {
+                done(err, res);
+            } else {
+                console.log('New action triggered with job id:' + job.id);
+            }
+        });
     });
 }
