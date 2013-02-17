@@ -52,7 +52,7 @@ if (cluster.isMaster) {
             } else if (job.type === 'project:sync' ||
                         job.type === 'project:autosync' ||
                         job.type === 'project:clean' ) {
-                console.log('Project sync job complete');
+                console.log('Project job complete');
                 redisPub.publish(job.data.username + ':project:ready', "ready");
             }
         });
