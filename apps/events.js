@@ -48,15 +48,12 @@ module.exports.listen = function(app) {
         }
     };
     
-    console.log('Subscribing to ' + userReady);
     sub.psubscribe('*' + userReady);
-    console.log('Subscribing to ' + projectReady);
     sub.psubscribe('*' + projectReady);
     sub.on("error", function (err) {
-        console.log('Redis error.');
         console.error(err);
     }).on("pmessage", function(pattern, channel, message) {
-        console.log('Message received: channel=' + channel +
+        console.debug('Message received: channel=' + channel +
                             ',msg=' + message);
         if (pattern === userReadyPattern) {
             emit(channel, userReady, 'ready');
@@ -66,7 +63,7 @@ module.exports.listen = function(app) {
     });
     io.sockets.on('connection', function(socket) {
         socket.on("init", function(username) {
-            console.log("Got init event");
+            console.debug("Got init event");
             socket.set('username', username);
             var userSockets = socketMap[username] || [];
             userSockets.push(socket);
@@ -78,7 +75,7 @@ module.exports.listen = function(app) {
             });
         });
         socket.on("disconnect", function() {
-            console.log("Socket disconnected");
+            console.debug("Socket disconnected");
             var username = socket.get('username');
             if (username && socketMap[username]) {
                 socketMap[username].remove(socket);
