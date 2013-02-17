@@ -38,7 +38,10 @@ if (cluster.isMaster) {
 
     jobs.on('job complete', function(id) {
         Job.get(id, function(err, job){
-            if (err) return;
+            if (err) {
+                console.error(err);
+                return;
+            }
             job.remove(function(err){
                 if (err) throw err;
             });
