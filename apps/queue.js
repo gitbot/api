@@ -74,8 +74,11 @@ if (cluster.isMaster) {
     });
 
     jobs.process('action:trigger', function(job, done) {
-        job.status_url = config.statusReceiver.replace('{jobId}', job.id);
-        project.triggerAction(job, function(err, res) {
+        var data = JSON.parse(JSON.stringify(job.data));
+        delete data.authUser;
+        data.status_url = config.statusReceiver.replace('{jobId}', job.id);
+        data.github_oauth = job.data.authUser.token;
+        project.triggerAction(data, function(err, res) {
             if (err) {
                 done(err, res);
             } else {
