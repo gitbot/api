@@ -53,8 +53,6 @@ module.exports.listen = function(app) {
     sub.on("error", function (err) {
         console.error(err);
     }).on("pmessage", function(pattern, channel, message) {
-        console.debug('Message received: channel=' + channel +
-                            ',msg=' + message);
         if (pattern === userReadyPattern) {
             emit(channel, userReady, 'ready');
         } else if (pattern === projectReady) {
@@ -63,7 +61,6 @@ module.exports.listen = function(app) {
     });
     io.sockets.on('connection', function(socket) {
         socket.on("init", function(username) {
-            console.debug("Got init event");
             socket.set('username', username);
             var userSockets = socketMap[username] || [];
             userSockets.push(socket);
@@ -75,7 +72,6 @@ module.exports.listen = function(app) {
             });
         });
         socket.on("disconnect", function() {
-            console.debug("Socket disconnected");
             var username = socket.get('username');
             if (username && socketMap[username]) {
                 socketMap[username].remove(socket);

@@ -45,14 +45,11 @@ if (cluster.isMaster) {
             job.remove(function(err){
                 if (err) throw err;
             });
-            console.debug('Job [' + job.type + ':' + job.id + '] complete');
             if (job.type === 'user:sync') {
-                console.debug('User sync job complete');
                 redisPub.publish(job.data.username + ':user:ready', "ready");
             } else if (job.type === 'project:sync' ||
                         job.type === 'project:autosync' ||
                         job.type === 'project:clean' ) {
-                console.debug('Project job complete');
                 redisPub.publish(job.data.username + ':project:ready', "ready");
             }
         });
