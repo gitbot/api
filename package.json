@@ -10,18 +10,20 @@
   "engines": {
     "node": "~v0.8.11"
   },
+  "devdependencies": {
+    "mocha": "~1.8.1"
+  },
   "dependencies": {
-    "mocha": "~1.6.0",
     "superagent": "~0.9.5",
-    "async": "~0.1.22",
+    "async": "~0.2.5",
     "qs": "~0.5.1",
-    "express": "~3.0.0rc5",
+    "express": "~3.1.0",
     "node-restify-errors": "git://github.com/m9dfukc/node-restify-errors.git",
     "redis": "~0.8.1",
     "hiredis": "~0.1.14",
     "connect-redis": "~1.4.4",
-    "kue": "~0.4.0",
-    "js-yaml": "~1.0.2",
+    "kue": "~0.5.0",
+    "js-yaml": "~2.0.2",
     "socket.io": "~0.9.10",
     "aws-sdk": "~0.9.3"
   },
