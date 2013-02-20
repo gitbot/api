@@ -3,7 +3,9 @@ var     cluster = require('cluster')
     ,   GithubModel = require('../lib/model/github')
     ,   githubModel = new GithubModel(config.github)
     ,   kue = require('kue')
-    ,   redis = require('redis').createClient(config.db.port, config.db.host)
+    ,   noderedis = require('redis')
+    ,   node_redis.debug_mode = true
+    ,   redis = noderedis.createClient(config.db.port, config.db.host)
     ,   User = require('../lib/model/account').User
     ,   user = new User(redis, githubModel)
     ,   ping  = require('../lib/ping')
@@ -12,7 +14,8 @@ var     cluster = require('cluster')
     ,   Job = kue.Job;
 
 kue.redis.createClient = function() {
-    return require('redis').createClient(config.db.port, config.db.host);
+
+    kred = noderedis.createClient(config.db.port, config.db.host);
 };
 
 var jobs = kue.createQueue();
