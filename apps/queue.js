@@ -1,5 +1,7 @@
-var     cluster = require('cluster')
-    ,   config = require('../lib/config')
+var
+    //cluster = require('cluster')
+    //,
+    config = require('../lib/config')
     ,   GithubModel = require('../lib/model/github')
     ,   githubModel = new GithubModel(config.github)
     ,   kue = require('kue')
@@ -21,23 +23,23 @@ kue.redis.createClient = function() {
 var jobs = kue.createQueue();
 
 
-if (cluster.isMaster) {
+//if (cluster.isMaster) {
     var redisPub = noderedis.createClient(
                         config.db.port, config.db.host);
-    var numCPUs = require('os').cpus().length;
-    for (var i = 0; i < numCPUs; i++) {
-        cluster.fork();
-    }
-    console.log( numCPUs + ' workers started for processing jobs');
+//    var numCPUs = require('os').cpus().length;
+//    for (var i = 0; i < numCPUs; i++) {
+//        cluster.fork();
+//    }
+//    console.log( numCPUs + ' workers started for processing jobs');
     kue.app.use(ping());
 
     kue.app.listen(config.queue.port, config.queue.ip);
     console.log('Kue is listening at [%s]:[%s]', config.queue.ip, config.queue.port);
 
-    cluster.on('exit', function(worker) {
-        console.log('worker ' + worker.process.pid + ' died');
-        cluster.fork();
-    });
+//    cluster.on('exit', function(worker) {
+//        console.log('worker ' + worker.process.pid + ' died');
+//        cluster.fork();
+//    });
 
     jobs.on('job complete', function(id) {
         Job.get(id, function(err, job){
@@ -58,7 +60,7 @@ if (cluster.isMaster) {
         });
     });
 
-} else {
+//} else {
 
     jobs.process('user:sync', function(job, done) {
         user.sync(job.data.token, job.data.username, done);
@@ -89,4 +91,4 @@ if (cluster.isMaster) {
             }
         });
     });
-}
+//}

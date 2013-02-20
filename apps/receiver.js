@@ -4,6 +4,7 @@ var     async = require('async')
     ,   GithubModel = require('../lib/model/github')
     ,   githubModel = new GithubModel(config.github)
     ,   kue = require('kue')
+    ,   Job = kue.Job
     ,   redis = require('redis').createClient(config.db.port, config.db.host)
     ,   util = require('../lib/util')
     ,   responder = util.responder
@@ -114,8 +115,7 @@ function setStatus(job, data) {
 function actionStatusHook(req, res) {
     var jobId = req.params.jobId;
     var status = req.body;
-    var jobList = require('kue/lib/queue/job');
-    jobList.get(jobId, function(err, job) {
+    Job.get(jobId, function(err, job) {
         if (err) {
             // TODO: Handle this gracefully.
             console.error(err);
@@ -153,5 +153,5 @@ function actionStatusHook(req, res) {
 
 app.post('/gb-sync-project/action/:event', projectHook);
 app.post('/:project/action/:event', actionHook);
-app.post('/project/:project/trigger', actionTriggerHook);
-app.post('/job/:jobId/status', actionStatusHook);
+app.post('/projects/:project/trigger', actionTriggerHook);
+app.post('/jobs/:jobId/status', actionStatusHook);
