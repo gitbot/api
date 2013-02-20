@@ -113,7 +113,8 @@ function setStatus(job, data) {
 function actionStatusHook(req, res) {
     var jobId = req.params.jobId;
     var status = req.body;
-    jobs.get(jobId, function(err, job) {
+    var jobList = require('kue/lib/queue/job');
+    jobList.get(jobId, function(err, job) {
         if (err) {
             // TODO: Handle this gracefully.
             console.error(err);
