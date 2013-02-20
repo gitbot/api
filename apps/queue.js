@@ -4,7 +4,6 @@ var     cluster = require('cluster')
     ,   githubModel = new GithubModel(config.github)
     ,   kue = require('kue')
     ,   noderedis = require('redis')
-    ,   node_redis.debug_mode = true
     ,   redis = noderedis.createClient(config.db.port, config.db.host)
     ,   User = require('../lib/model/account').User
     ,   user = new User(redis, githubModel)
@@ -13,16 +12,17 @@ var     cluster = require('cluster')
     ,   project = new Project(redis, githubModel)
     ,   Job = kue.Job;
 
+noderedis.debug_mode = true;
+    
 kue.redis.createClient = function() {
-
-    kred = noderedis.createClient(config.db.port, config.db.host);
+    return noderedis.createClient(config.db.port, config.db.host);
 };
 
 var jobs = kue.createQueue();
 
 
 if (cluster.isMaster) {
-    var redisPub = require('redis').createClient(
+    var redisPub = noderedis.createClient(
                         config.db.port, config.db.host);
     var numCPUs = require('os').cpus().length;
     for (var i = 0; i < numCPUs; i++) {

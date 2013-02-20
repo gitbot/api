@@ -100,7 +100,7 @@ function actionHook(req, res) {
 
 function setStatus(job, data) {
     githubModel.setStatus(job.data.authUser.token,
-                    job.data.repo, job.data.sha, data, 
+                    job.data.repo, job.data.sha, data,
                     function(err) {
         if (err) {
             // TODO: Handle this gracefully.
