@@ -24,6 +24,63 @@ function projectHook(req, res) {
     res.send({success: true});
 }
 
+function triggerProjectAction(proj, repo, branch, sha, event, res) {
+    async.waterfall([
+    
+        function findAction(done) {
+            project.findAction(proj, event, repo, branch, done);
+        },
+
+        function getAuthUser(action, done) {
+            if (!action) {
+                return done('Cannot find an action for the received hook.');
+            }
+            project.getAuthUser(proj, function(err, result) {
+                if (err) done(err);
+                else {
+                    done (null, result, action);
+                }
+            });
+        },
+        
+        function triggerAction(authUser, action, done) {
+            
+            jobs.create('action:trigger', {
+                authUser: authUser,
+                project: proj,
+                action: action,
+                repo: repo,
+                branch: branch,
+                sha: sha
+            }).save();
+
+            done(null, authUser, action);
+        },
+       
+        function setStatus(authUser, action, done) {
+            githubModel.setStatus(authUser.token, repo, sha, {
+                state: 'pending',
+                description: 'Gitbot:: New build triggered.'
+            }, done);
+        }
+    ], responder('Cannot consume action', function() {
+            // TODO: Figure out logging bad events properly to facilitate clean up.
+            res.send({success: true});
+        }
+    ));
+}
+
+
+function actionTriggerHook(req, res) {
+    var     proj = req.params.project
+        ,   repo = req.body.repo
+        ,   branch = req.body.branch
+        ,   sha = req.body.sha
+        ,   event = req.body.event;
+    branch = branch.replace('refs/heads/',  '');
+    triggerProjectAction(proj, repo, branch, sha, event, res);
+}
+
 
 function actionHook(req, res) {
     var     repo, branch, sha
@@ -39,54 +96,7 @@ function actionHook(req, res) {
         ,   branch = req.body.pull_request.head.ref
         ,   sha = req.body.pull_request.head.sha;
     }
-    branch = branch.replace('refs/heads/',  '');
-    
-    async.waterfall([
-    
-            function findAction(done) {
-                project.findAction(proj, event, repo, branch, done);
-            },
-
-            function getAuthUser(action, done) {
-                if (!action) {
-                    return done('Cannot find an action for the received hook.');
-                }
-                project.getAuthUser(proj, function(err, result) {
-                    if (err) done(err);
-                    else {
-                        done (null, result, action);
-                    }
-                });
-            },
-        
-            function triggerAction(authUser, action, done) {
-                
-                jobs.create('action:trigger', {
-                    authUser: authUser,
-                    project: proj,
-                    action: action,
-                    repo: repo,
-                    branch: branch,
-                    sha: sha
-                }).save();
-
-                done(null, authUser, action);
-            },
-       
-            function setStatus(authUser, action, done) {
-                githubModel.setStatus(authUser.token, repo, sha, {
-                    state: 'pending',
-                    description: 'Gitbot:: New build triggered.'
-                }, done);
-            }
-        ],
-       
-        responder('Cannot consume action', function() {
-
-            // TODO: Figure out logging bad events properly to facilitate clean up.
-            res.send({success: true});
-        }
-    ));
+    triggerProjectAction(proj, repo, branch, sha, event, res);
 }
 
 
@@ -143,4 +153,5 @@ function actionStatusHook(req, res) {
 
 app.post('/gb-sync-project/action/:event', projectHook);
 app.post('/:project/action/:event', actionHook);
+app.post('/project/:project/trigger', actionTriggerHook);
 app.post('/job/:jobId/status', actionStatusHook);
