@@ -25,6 +25,7 @@ function projectHook(req, res) {
 }
 
 function triggerProjectAction(proj, repo, branch, sha, event, res) {
+    branch = branch.replace('refs/heads/',  '');
     async.waterfall([
     
         function findAction(done) {
@@ -70,17 +71,14 @@ function triggerProjectAction(proj, repo, branch, sha, event, res) {
     ));
 }
 
-
 function actionTriggerHook(req, res) {
     var     proj = req.params.project
         ,   repo = req.body.repo
         ,   branch = req.body.branch
         ,   sha = req.body.sha
         ,   event = req.body.event;
-    branch = branch.replace('refs/heads/',  '');
     triggerProjectAction(proj, repo, branch, sha, event, res);
 }
-
 
 function actionHook(req, res) {
     var     repo, branch, sha
