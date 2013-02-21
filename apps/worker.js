@@ -4,6 +4,7 @@ var     config = require('../lib/config')
     ,   kue = require('kue')
     ,   noderedis = require('redis')
     ,   redis = noderedis.createClient(config.db.port, config.db.host)
+    ,   redisPub = noderedis.createClient(config.db.port, config.db.host)
     ,   User = require('../lib/model/account').User
     ,   user = new User(redis, githubModel)
     ,   Project = require('../lib/model/project').Project
@@ -21,7 +22,6 @@ jobs.on('job complete', function(id) {
             console.error(err);
             return;
         }
-        var redisPub = noderedis.createClient(config.db.port, config.db.host);
         if (job.type === 'user:sync') {
             redisPub.publish(job.data.username + ':user:ready', "ready");
         } else if (job.type === 'project:sync' ||
@@ -29,7 +29,7 @@ jobs.on('job complete', function(id) {
                     job.type === 'project:clean' ) {
             redisPub.publish(job.data.username + ':project:ready', "ready");
         }
-        redisPub.quit();
+
         job.remove(function(err){
             if (err) throw err;
         });
