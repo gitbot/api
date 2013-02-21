@@ -134,7 +134,7 @@ function actionStatusHook(req, res) {
                 setStatus(job, {
                     state: 'success',
                     description: status.message,
-                    url: status.url
+                    target_url: status.url
                 }, res);
             } else if (status.state === 'working') {
              
@@ -142,7 +142,7 @@ function actionStatusHook(req, res) {
                 setStatus(job, {
                     state: 'pending',
                     description: status.message,
-                    url: status.url || null
+                    target_url: status.url || null
                 }, res);
 
             } else if (status.state === 'error' || status.state === 'failure') {
@@ -152,8 +152,12 @@ function actionStatusHook(req, res) {
                 setStatus(job, {
                     state: status.state,
                     description: status.message,
-                    url: status.url || null
+                    target_url: status.url || null
                 }, res);
+            } else {
+                 res.send(
+                    {success: false, message: 'Bad status code'},
+                    410);
             }
         }
     });
