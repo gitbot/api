@@ -15,13 +15,13 @@ kue.redis.createClient = function() {
 };
 
 var jobs = kue.createQueue();
-var redisPub = noderedis.createClient(config.db.port, config.db.host);
 jobs.on('job complete', function(id) {
     Job.get(id, function(err, job){
         if (err) {
             console.error(err);
             return;
         }
+        var redisPub = noderedis.createClient(config.db.port, config.db.host);
         if (job.type === 'user:sync') {
             redisPub.publish(job.data.username + ':user:ready', "ready");
         } else if (job.type === 'project:sync' ||
@@ -29,6 +29,7 @@ jobs.on('job complete', function(id) {
                     job.type === 'project:clean' ) {
             redisPub.publish(job.data.username + ':project:ready', "ready");
         }
+        redisPub.quit();
         job.remove(function(err){
             if (err) throw err;
         });
