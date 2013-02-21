@@ -99,7 +99,7 @@ function actionHook(req, res) {
 }
 
 
-function setStatus(job, data) {
+function setStatus(job, data, res) {
     githubModel.setStatus(job.data.authUser.token,
                     job.data.repo, job.data.sha, data,
                     function(err) {
@@ -108,6 +108,11 @@ function setStatus(job, data) {
             job.log(err);
             console.error('Error occurred when setting status.');
             console.error(err);
+            res.send(
+                {success:false, message:'Unable to set commit status.'},
+                424);
+        } else {
+            res.send({success: true});
         }
     });
 }
@@ -119,6 +124,9 @@ function actionStatusHook(req, res) {
         if (err) {
             // TODO: Handle this gracefully.
             console.error(err);
+            res.send(
+                {success: false, message: 'Job not found'},
+                410);
         } else {
             if (status.state === 'complete') {
             
@@ -127,7 +135,7 @@ function actionStatusHook(req, res) {
                     state: 'success',
                     description: status.message,
                     url: status.url
-                });
+                }, res);
             } else if (status.state === 'working') {
              
                 job.log(status.message);
@@ -135,7 +143,7 @@ function actionStatusHook(req, res) {
                     state: 'pending',
                     description: status.message,
                     url: status.url || null
-                });
+                }, res);
 
             } else if (status.state === 'error' || status.state === 'failure') {
                 
@@ -145,7 +153,7 @@ function actionStatusHook(req, res) {
                     state: status.state,
                     description: status.message,
                     url: status.url || null
-                });
+                }, res);
             }
         }
     });
