@@ -72,10 +72,11 @@ module.exports.listen = function(app) {
             });
         });
         socket.on("disconnect", function() {
-            var username = socket.get('username');
-            if (username && socketMap[username]) {
-                socketMap[username].remove(socket);
-            }
+            socket.get('username', function(username) {
+                if (username && socketMap[username]) {
+                    socketMap[username].remove(socket);
+                }    
+            });
         });
     });
 };
