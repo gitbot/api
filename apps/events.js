@@ -75,7 +75,7 @@ module.exports.listen = function(app) {
             socket.get('username', function(username) {
                 if (username && socketMap[username]) {
                     socketMap[username].remove(socket);
-                }    
+                }
             });
         });
     });
