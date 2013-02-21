@@ -13,8 +13,6 @@ var
     ,   Project = require('../lib/model/project').Project
     ,   project = new Project(redis, githubModel)
     ,   Job = kue.Job;
-
-noderedis.debug_mode = true;
     
 kue.redis.createClient = function() {
     return noderedis.createClient(config.db.port, config.db.host);
