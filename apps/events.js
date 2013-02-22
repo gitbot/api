@@ -56,7 +56,7 @@ module.exports.listen = function(app) {
         if (pattern === userReadyPattern) {
             emit(channel, userReady, 'ready');
         } else if (pattern === projectReady) {
-            emit(channel, projectReady, 'ready');
+            emit(channel, projectReady, 'projectReady');
         }
     });
     io.sockets.on('connection', function(socket) {
