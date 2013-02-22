@@ -65,7 +65,10 @@ module.exports.listen = function(app, config) {
                 socket.emit(message);
             });
             socket.on("disconnect", function() {
-                socketMap[username].remove(socket);
+                var index = userSockets.indexOf(socket);
+                if (index >= 0) {
+                    delete userSockets[index];
+                }
             });
         });
     });
