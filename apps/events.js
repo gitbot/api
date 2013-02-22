@@ -40,9 +40,8 @@ module.exports.listen = function(app, config) {
                 socket.emit(message);
             });
         } else {
-            var pending = pendingMessages[username] || [];
+            var pending = pendingMessages[username] || (pendingMessages[username] = []);
             pending.push(message);
-            pendingMessages[username] = pending;
         }
     };
     
@@ -57,7 +56,6 @@ module.exports.listen = function(app, config) {
     });
     io.sockets.on('connection', function(socket) {
         socket.on("init", function(username) {
-            socket.set('username', username);
             var userSockets = socketMap[username] || [];
             userSockets.push(socket);
             socketMap[username] = userSockets;
@@ -66,12 +64,8 @@ module.exports.listen = function(app, config) {
             pending.forEach(function(message) {
                 socket.emit(message);
             });
-        });
-        socket.on("disconnect", function() {
-            socket.get('username', function(username) {
-                if (username && socketMap[username]) {
-                    socketMap[username].remove(socket);
-                }
+            socket.on("disconnect", function() {
+                socketMap[username].remove(socket);
             });
         });
     });

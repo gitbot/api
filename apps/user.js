@@ -22,7 +22,7 @@ module.exports = function(config, jobs) {
     function getRepos(req, res) {
         var     token = req.session.accessToken
             ,   username = req.session.username;
-        user.getRepos(token, username, 
+        user.getRepos(token, username,
             responder('Cannot get user repositories.', function(err, ret) {
             res.send(err||ret);
         }));
@@ -31,7 +31,7 @@ module.exports = function(config, jobs) {
     function getProjects(req, res) {
         var     token = req.session.accessToken
             ,   username = req.session.username;
-        user.getProjects(token, username, 
+        user.getProjects(token, username,
             responder('Cannot retrieve projects.', function(err, ret) {
             res.send(err||ret);
         }));
