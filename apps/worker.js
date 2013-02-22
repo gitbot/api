@@ -1,21 +1,18 @@
 var     config = require('../lib/config')
+    ,   factory = require('../lib/factory')
+    ,   aws = require('aws-sdk')
     ,   GithubModel = require('../lib/model/github')
     ,   githubModel = new GithubModel(config.github)
-    ,   kue = require('kue')
+    ,   Job = require('kue').Job
+    ,   jobs = factory.Jobs(config)
     ,   noderedis = require('redis')
-    ,   redis = noderedis.createClient(config.db.port, config.db.host)
-    ,   redisPub = noderedis.createClient(config.db.port, config.db.host)
+    ,   redis = factory.Redis(config)
+    ,   redisPub = factory.Redis(config)
     ,   User = require('../lib/model/account').User
     ,   user = new User(redis, githubModel)
     ,   Project = require('../lib/model/project').Project
-    ,   project = new Project(redis, githubModel)
-    ,   Job = kue.Job;
-    
-kue.redis.createClient = function() {
-    return noderedis.createClient(config.db.port, config.db.host);
-};
+    ,   project = new Project(redis, githubModel);
 
-var jobs = kue.createQueue();
 jobs.on('job complete', function(id) {
     Job.get(id, function(err, job){
         if (err) {
@@ -29,7 +26,6 @@ jobs.on('job complete', function(id) {
                     job.type === 'project:clean' ) {
             redisPub.publish(job.data.username + ':project:ready', "ready");
         }
-
         job.remove(function(err){
             if (err) throw err;
         });
@@ -57,7 +53,19 @@ jobs.process('action:trigger', function(job, done) {
     delete data.authUser;
     data.status_url = config.statusReceiver.replace('{jobId}', job.id);
     data.github_oauth = job.data.authUser.token;
-    project.triggerAction(data, function(err, res) {
+    aws.config.update({
+        accessKeyId: config.worker.managerKey,
+        secretAccessKey: config.worker.managerSecret,
+        region: config.worker.region
+    });
+    var sqs = new aws.SQS();
+    var body = JSON.stringify(data);
+    body = new Buffer(body).toString('base64');
+
+    sqs.client.sendMessage({
+        QueueUrl: config.worker.queueUrl,
+        MessageBody: body
+    },  function(err, res) {
         if (err) {
             done(err, res);
         } else {
@@ -65,3 +73,4 @@ jobs.process('action:trigger', function(job, done) {
         }
     });
 });
+console.log('Worker process started');

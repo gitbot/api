@@ -1,23 +1,17 @@
 var     async = require('async')
     ,   config = require('../lib/config')
+    ,   factory = require('../lib/factory')
     ,   express = require('express')
     ,   GithubModel = require('../lib/model/github')
     ,   githubModel = new GithubModel(config.github)
-    ,   kue = require('kue')
-    ,   Job = kue.Job
-    ,   redis = require('redis').createClient(config.db.port, config.db.host)
+    ,   Job = require('kue').Job
+    ,   redis = factory.Redis()
     ,   util = require('../lib/util')
     ,   responder = util.responder
     ,   Project = require('../lib/model/project').Project
     ,   project = new Project(redis, githubModel)
-    ,   app = module.exports = express();
-
-
-kue.redis.createClient = function() {
-    return require('redis').createClient(config.q.port, config.q.host);
-};
-
-var jobs = kue.createQueue();
+    ,   app = module.exports = express()
+    ,   jobs = app.locals.jobs;
 
 function projectHook(req, res) {
     var repo = req.body.repository.owner.name + '/' + req.body.repository.name;

@@ -1,7 +1,8 @@
 /*global require:true, module:true, console:true */
 var     express = require('express')
     ,   config = require('./lib/config')
-    ,   redis = require('redis').createClient(config.db.port, config.db.host)
+    ,   factory = require('./lib/factory')
+    ,   redis = factory.Redis(config)
     ,   app = express()
     ,   ping  = require('./lib/ping')
     ,   auth = require('./apps/auth')
@@ -63,6 +64,8 @@ var responseError = function(req, res, next) {
     };
     next();
 };
+
+app.locals.jobs = factory.Kue(config);
 
 app.configure(function() {
     app.enable('trust proxy');

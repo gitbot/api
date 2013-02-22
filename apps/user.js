@@ -1,10 +1,10 @@
 var     config = require('../lib/config')
+    ,   factory = require('../lib/factory')
     ,   express = require('express')
     ,   errors = require('node-restify-errors')
     ,   GithubModel = require('../lib/model/github')
     ,   githubModel = new GithubModel(config.github)
-    ,   kue = require('kue')
-    ,   redis = require('redis').createClient(config.db.port, config.db.host)
+    ,   redis = factory.Redis(config)
     ,   util = require('../lib/util')
     ,   restrict = util.restrict
     ,   responder = util.responder
@@ -12,13 +12,8 @@ var     config = require('../lib/config')
     ,   user = new User(redis, githubModel)
     ,   Project = require('../lib/model/project').Project
     ,   project = new Project(redis, githubModel)
-    ,   app = module.exports = express();
-
-kue.redis.createClient = function() {
-    return require('redis').createClient(config.q.port, config.q.host);
-};
-
-var jobs = kue.createQueue();
+    ,   app = module.exports = express()
+    ,   jobs = app.locals.jobs;
 
 function getRepos(req, res) {
     var     token = req.session.accessToken

@@ -1,7 +1,7 @@
 var
         config = require('../lib/config')
-    ,   redis = require('redis')
-    ,   sub = redis.createClient(config.db.port, config.db.host);
+    ,   factory = require('../lib/factory')
+    ,   sub = factory.Redis(config);
 
 module.exports.listen = function(app) {
 
@@ -50,9 +50,7 @@ module.exports.listen = function(app) {
     
     sub.psubscribe('*' + userReady);
     sub.psubscribe('*' + projectReady);
-    sub.on("error", function (err) {
-        console.error(err);
-    }).on("pmessage", function(pattern, channel, message) {
+    sub.on("pmessage", function(pattern, channel, message) {
         if (pattern === userReadyPattern) {
             emit(channel, userReady, 'ready');
         } else if (pattern === projectReady) {

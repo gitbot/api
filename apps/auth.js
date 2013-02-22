@@ -1,12 +1,12 @@
 var     async = require('async')
     ,   config = require('../lib/config')
     ,   express = require('express')
+    ,   factory = require('../lib/factory')
     ,   GithubAuth = require('../lib/auth/github')
     ,   githubAuth = new GithubAuth(config.auth, config.github)
     ,   GithubModel = require('../lib/model/github')
     ,   githubModel = new GithubModel(config.github)
-    ,   kue = require('kue')
-    ,   redis = require('redis').createClient(config.db.port, config.db.host)
+    ,   redis = factory.Redis(config)
     ,   util = require('../lib/util')
     ,   restrict = util.restrict
     ,   responder = util.responder
@@ -14,14 +14,8 @@ var     async = require('async')
     ,   session = new Session(redis)
     ,   User = require('../lib/model/account').User
     ,   user = new User(redis, githubModel)
-    ,   app = module.exports = express();
-
-
-kue.redis.createClient = function() {
-    return require('redis').createClient(config.q.port, config.q.host);
-};
-
-var jobs = kue.createQueue();
+    ,   app = module.exports = express()
+    ,   jobs = app.locals.jobs;
 
 var scopes = ['user', 'repo', 'repo:status'];
 
