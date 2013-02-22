@@ -1,115 +1,122 @@
-var     config = require('../lib/config')
-    ,   factory = require('../lib/factory')
-    ,   express = require('express')
-    ,   errors = require('node-restify-errors')
-    ,   GithubModel = require('../lib/model/github')
-    ,   githubModel = new GithubModel(config.github)
-    ,   redis = factory.Redis(config)
-    ,   util = require('../lib/util')
-    ,   restrict = util.restrict
-    ,   responder = util.responder
-    ,   User = require('../lib/model/account').User
-    ,   user = new User(redis, githubModel)
-    ,   Project = require('../lib/model/project').Project
-    ,   project = new Project(redis, githubModel)
-    ,   app = module.exports = express()
-    ,   jobs = app.locals.jobs;
+module.exports = function(config, jobs) {
+    
+    config = config || require('../lib/config');
 
-function getRepos(req, res) {
-    var     token = req.session.accessToken
-        ,   username = req.session.username;
-    user.getRepos(token, username, responder('Cannot get user repositories.', function(err, ret) {
-        res.send(err||ret);
-    }));
-}
+    var     factory = require('../lib/factory')
+        ,   express = require('express')
+        ,   errors = require('node-restify-errors')
+        ,   GithubModel = require('../lib/model/github')
+        ,   githubModel = new GithubModel(config.github)
+        ,   redis = factory.Redis(config)
+        ,   util = require('../lib/util')
+        ,   restrict = util.restrict
+        ,   responder = util.responder
+        ,   User = require('../lib/model/account').User
+        ,   user = new User(redis, githubModel)
+        ,   Project = require('../lib/model/project').Project
+        ,   project = new Project(redis, githubModel)
+        ,   app = express();
 
-function getProjects(req, res) {
-    var     token = req.session.accessToken
-        ,   username = req.session.username;
-    user.getProjects(token, username, responder('Cannot retrieve projects.', function(err, ret) {
-        res.send(err||ret);
-    }));
-}
+    jobs = jobs || factory.Jobs(config);
 
-function syncProjectJob(token, username, repo) {
-    jobs.create('project:sync', {
-                    username: username,
-                    token: token,
-                    repo: repo
-                }).save();
-}
-
-function addProject(req, res) {
-    var     token = req.session.accessToken
-        ,   username = req.session.username
-        ,   repo = req.params.repo;
-
-    if (!repo) {
-        return res.send(
-            new errors.MissingParameterError(
-                'A valid repo must be provided to add a project.'
-            )
-        );
+    function getRepos(req, res) {
+        var     token = req.session.accessToken
+            ,   username = req.session.username;
+        user.getRepos(token, username, responder('Cannot get user repositories.', function(err, ret) {
+            res.send(err||ret);
+        }));
     }
 
-    project.add(token, username, repo, responder('Cannot add project.', function(err) {
-        if (!err) {
-            syncProjectJob(token, username, repo);
+    function getProjects(req, res) {
+        var     token = req.session.accessToken
+            ,   username = req.session.username;
+        user.getProjects(token, username, responder('Cannot retrieve projects.', function(err, ret) {
+            res.send(err||ret);
+        }));
+    }
+
+    function syncProjectJob(token, username, repo) {
+        jobs.create('project:sync', {
+                        username: username,
+                        token: token,
+                        repo: repo
+                    }).save();
+    }
+
+    function addProject(req, res) {
+        var     token = req.session.accessToken
+            ,   username = req.session.username
+            ,   repo = req.params.repo;
+
+        if (!repo) {
+            return res.send(
+                new errors.MissingParameterError(
+                    'A valid repo must be provided to add a project.'
+                )
+            );
         }
-        res.send(err||{success: true});
-    }));
-}
 
-function deleteProject(req, res) {
-    var     token = req.session.accessToken
-        ,   username = req.session.username
-        ,   repo = req.params.repo;
-
-    if (!repo) {
-        return res.send(
-            new errors.MissingParameterError(
-                'A valid repo must be provided to remove a project.'
-            )
-        );
+        project.add(token, username, repo, responder('Cannot add project.', function(err) {
+            if (!err) {
+                syncProjectJob(token, username, repo);
+            }
+            res.send(err||{success: true});
+        }));
     }
 
-    project.remove(token, username, repo, responder('Cannot remove project.', function(err) {
-        if (!err) {
-            jobs.create('project:clean', {
-                    username: username,
-                    token: token,
-                    repo: repo
-                }).save();
+    function deleteProject(req, res) {
+        var     token = req.session.accessToken
+            ,   username = req.session.username
+            ,   repo = req.params.repo;
+
+        if (!repo) {
+            return res.send(
+                new errors.MissingParameterError(
+                    'A valid repo must be provided to remove a project.'
+                )
+            );
         }
-        res.send(err||{success: true});
-    }));
-}
 
-function syncProject(req, res) {
-    var     token = req.session.accessToken
-        ,   username = req.session.username
-        ,   repo = req.params.repo;
-
-    if (!repo) {
-        return res.send(
-            new errors.MissingParameterError(
-                'A valid repo must be provided to sync a project.'
-            )
-        );
+        project.remove(token, username, repo, responder('Cannot remove project.', function(err) {
+            if (!err) {
+                jobs.create('project:clean', {
+                        username: username,
+                        token: token,
+                        repo: repo
+                    }).save();
+            }
+            res.send(err||{success: true});
+        }));
     }
-    syncProjectJob(token, username, repo);
-    res.send({success: true});
-}
 
-var routes = {
-    repos: '/repos',
-    projects: '/projects',
-    project: '/projects/:repo'
+    function syncProject(req, res) {
+        var     token = req.session.accessToken
+            ,   username = req.session.username
+            ,   repo = req.params.repo;
+
+        if (!repo) {
+            return res.send(
+                new errors.MissingParameterError(
+                    'A valid repo must be provided to sync a project.'
+                )
+            );
+        }
+        syncProjectJob(token, username, repo);
+        res.send({success: true});
+    }
+
+    var routes = {
+        repos: '/repos',
+        projects: '/projects',
+        project: '/projects/:repo'
+    };
+
+    app.get(routes.repos, restrict, getRepos);
+
+    app.get(routes.projects, restrict, getProjects);
+    app.put(routes.project, restrict, addProject);
+    app.patch(routes.project, restrict, syncProject);
+    app.del(routes.project, restrict, deleteProject);
+
+    return app;
 };
-
-app.get(routes.repos, restrict, getRepos);
-
-app.get(routes.projects, restrict, getProjects);
-app.put(routes.project, restrict, addProject);
-app.patch(routes.project, restrict, syncProject);
-app.del(routes.project, restrict, deleteProject);

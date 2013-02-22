@@ -1,12 +1,10 @@
-var
-        config = require('../lib/config')
-    ,   factory = require('../lib/factory')
-    ,   sub = factory.Redis(config);
+module.exports.listen = function(app, config) {
+    
+    config = config || require('../lib/config');
 
-module.exports.listen = function(app) {
-
-    var
-            conf = {origins: config.socket.origins}
+    var     factory = require('../lib/factory')
+        ,   sub = factory.Redis(config)
+        ,   conf = {origins: config.socket.origins}
         ,   userReady = ':user:ready'
         ,   userReadyPattern = '*' + userReady
         ,   projectReady = ':project:ready'

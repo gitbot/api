@@ -65,8 +65,6 @@ var responseError = function(req, res, next) {
     next();
 };
 
-app.locals.jobs = factory.Kue(config);
-
 app.configure(function() {
     app.enable('trust proxy');
     app.use(responseError);
@@ -79,9 +77,13 @@ app.configure(function() {
     app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 });
 
-app.use('/auth', auth);
-app.use('/user', user);
-app.use('/hooks', receiver);
+var
+        kue = factory.Kue(config)
+    ,   jobs = kue.createQueue();
+
+app.use('/auth', auth(config, jobs, kue.Job));
+app.use('/user', user(config, jobs, kue.Job));
+app.use('/hooks', receiver(config, jobs, kue.Job));
 
 app.options('*', function(req, res) {
     res.send({success: true});
@@ -90,6 +92,6 @@ app.options('*', function(req, res) {
 if (!module.parent) {
     var server = http.createServer(app);
     server.listen(config.api.port, config.api.ip);
-    events.listen(server);
+    events.listen(server, config);
     console.log('Express is listening at [%s]:[%s]', config.api.ip, config.api.port);
 }
