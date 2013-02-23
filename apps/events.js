@@ -54,18 +54,23 @@ module.exports.listen = function(app, config) {
             socket.join(username);
 
             // Get the user
-            var user = users.load(username);
+            users.load(username, function(err, user) {
+                if (err) {
+                    console.err('Cannot load user: ' + username);
+                    console.err(err);
+                } else {
+                    // Join all the repo rooms for this user
+                    if (user.repos && user.repos.length) {
+                        user.repos.forEach(function(repo) {
+                            socket.join(repo);
+                        });
+                    }
 
-            // Join all the repo rooms for this user
-            if (user.repos && user.repos.length) {
-                user.repos.forEach(function(repo) {
-                    socket.join(repo);
-                });
-            }
-
-            if (user.synced) {
-                io.sockets.in(username).emit('ready');
-            }
+                    if (user.synced) {
+                        io.sockets.in(username).emit('ready');
+                    }
+                }
+            });
         });
     });
 };
