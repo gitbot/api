@@ -77,13 +77,9 @@ app.configure(function() {
     app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 });
 
-var
-        kue = factory.Kue(config)
-    ,   jobs = kue.createQueue();
-
-app.use('/auth', auth(config, jobs, kue.Job));
-app.use('/user', user(config, jobs, kue.Job));
-app.use('/hooks', receiver(config, jobs, kue.Job));
+app.use('/auth', auth(config));
+app.use('/user', user(config));
+app.use('/hooks', receiver(config));
 
 app.options('*', function(req, res) {
     res.send({success: true});

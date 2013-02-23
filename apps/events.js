@@ -1,5 +1,5 @@
 module.exports.listen = function(app, config) {
-    
+
     config = config || require('../lib/config');
 
     var     factory = require('../lib/factory')
@@ -9,6 +9,8 @@ module.exports.listen = function(app, config) {
         ,   userReadyPattern = '*' + userReady
         ,   projectReady = ':project:ready'
         ,   projectReadyPattern = '*' + projectReady
+        ,   buildStatus = ':build:status'
+        ,   buildStatusPattern = '*' + buildStatus
         ,   io = require('socket.io').listen(app, conf)
         ,   socketMap = {}
         ,   pendingMessages = {};
@@ -44,14 +46,19 @@ module.exports.listen = function(app, config) {
             pending.push(message);
         }
     };
-    
-    sub.psubscribe('*' + userReady);
-    sub.psubscribe('*' + projectReady);
+
+    sub.psubscribe(userReadyPattern);
+    sub.psubscribe(projectReadyPattern);
+    sub.psubscribe(buildStatusPattern);
     sub.on("pmessage", function(pattern, channel, message) {
         if (pattern === userReadyPattern) {
             emit(channel, userReady, 'ready');
         } else if (pattern === projectReady) {
+            // TODO: Use channels to subscribe and publish
+            // messages per project.
             emit(channel, projectReady, 'projectReady');
+        } else if (pattern === buildStatus) {
+            emit(channel, buildStatus, message);
         }
     });
     io.sockets.on('connection', function(socket) {

@@ -1,23 +1,22 @@
-module.exports = function(config, jobs) {
-    
+module.exports = function(config) {
+
     config = config || require('../lib/config');
 
     var     factory = require('../lib/factory')
         ,   express = require('express')
-        ,   errors = require('node-restify-errors')
+        ,   errors = require('../lib/node-restify-errors')
         ,   GithubModel = require('../lib/model/github')
-        ,   githubModel = new GithubModel(config.github)
+        ,   githubModel = new GithubModel(config)
         ,   redis = factory.Redis(config)
+        ,   redisPub = factory.Redis(config)
         ,   util = require('../lib/util')
         ,   restrict = util.restrict
         ,   responder = util.responder
         ,   User = require('../lib/model/account').User
-        ,   user = new User(redis, githubModel)
+        ,   user = new User(config, redis)
         ,   Project = require('../lib/model/project').Project
-        ,   project = new Project(redis, githubModel)
+        ,   project = new Project(config, redis)
         ,   app = express();
-
-    jobs = jobs || factory.Jobs(config);
 
     function getRepos(req, res) {
         var     token = req.session.accessToken
@@ -38,11 +37,11 @@ module.exports = function(config, jobs) {
     }
 
     function syncProjectJob(token, username, repo) {
-        jobs.create('project:sync', {
+        redisPub.publish('project:sync', JSON.stringify({
                         username: username,
                         token: token,
                         repo: repo
-                    }).save();
+                    }));
     }
 
     function addProject(req, res) {
@@ -81,11 +80,11 @@ module.exports = function(config, jobs) {
 
         project.remove(token, username, repo, responder('Cannot remove project.', function(err) {
             if (!err) {
-                jobs.create('project:clean', {
+                redisPub.publish('project:clean', JSON.stringify({
                         username: username,
                         token: token,
                         repo: repo
-                    }).save();
+                    }));
             }
             res.send(err||{success: true});
         }));

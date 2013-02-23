@@ -1,25 +1,22 @@
-module.exports = function(config, jobs) {
-    
+module.exports = function(config) {
+
     config = config || require('../lib/config');
 
     var     async = require('async')
         ,   express = require('express')
         ,   factory = require('../lib/factory')
         ,   GithubAuth = require('../lib/auth/github')
-        ,   githubAuth = new GithubAuth(config.auth, config.github)
-        ,   GithubModel = require('../lib/model/github')
-        ,   githubModel = new GithubModel(config.github)
+        ,   githubAuth = new GithubAuth(config)
         ,   redis = factory.Redis(config)
+        ,   redisPub = factory.Redis(config)
         ,   util = require('../lib/util')
         ,   restrict = util.restrict
         ,   responder = util.responder
         ,   Session = require('../lib/model/account').Session
         ,   session = new Session(redis)
         ,   User = require('../lib/model/account').User
-        ,   user = new User(redis, githubModel)
+        ,   user = new User(config, redis)
         ,   app = express();
-
-    jobs = jobs || factory.Jobs(config);
 
     var scopes = ['user', 'repo', 'repo:status'];
 
@@ -104,13 +101,10 @@ module.exports = function(config, jobs) {
                     });
                 },
                 function syncUser(user, done) {
-                    var job = jobs.create('user:sync', {
+                    redisPub.publish('user:sync', JSON.stringify({
                         username: user.login,
                         token: token
-                    }).save();
-                    job.on('complete', function() {
-                        redis.hset('users:' + user.login, 'synced', true);
-                    });
+                    }));
                     done(null, user);
                 }
             ],

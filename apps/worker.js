@@ -2,75 +2,68 @@ var     config = require('../lib/config')
     ,   factory = require('../lib/factory')
     ,   aws = require('aws-sdk')
     ,   GithubModel = require('../lib/model/github')
-    ,   githubModel = new GithubModel(config.github)
-    ,   kue = factory.Kue(config)
-    ,   Job = kue.Job
-    ,   jobs = kue.createQueue()
+    ,   githubModel = new GithubModel(config)
     ,   redis = factory.Redis(config)
     ,   redisPub = factory.Redis(config)
     ,   User = require('../lib/model/account').User
-    ,   user = new User(redis, githubModel)
+    ,   user = new User(config, redis)
     ,   Project = require('../lib/model/project').Project
-    ,   project = new Project(redis, githubModel);
+    ,   project = new Project(config, redis)
+    ,   Builds = require('../lib/model/build')
+    ,   builds = new Builds(config, redis);
 
-jobs.on('job complete', function(id) {
-    Job.get(id, function(err, job){
+redisPub.subscribe('user:sync');
+redisPub.subscribe('project:sync');
+redisPub.subscribe('project:autosync');
+redisPub.subscribe('project:clean');
+redisPub.subscribe('project:trigger');
+redisPub.subscribe('build:status');
+
+redisPub.on('message', function(channel, message) {
+    var responseChannel;
+
+    var userResponseChannel = function(data) {
+        return data.username + ':user:status';
+    };
+
+    var projectResponseChannel = function(data) {
+        return data.repo + ':project:status';
+    };
+
+    var buildResponseChannel = function(data) {
+        return data.project + ':build:status';
+    };
+
+    var done = function(err, res) {
         if (err) {
             console.error(err);
+            redisPub.publish(responseChannel, 'error');
             return;
-        }
-        if (job.type === 'user:sync') {
-            redisPub.publish(job.data.username + ':user:ready', "ready");
-        } else if (job.type === 'project:sync' ||
-                    job.type === 'project:autosync' ||
-                    job.type === 'project:clean' ) {
-            redisPub.publish(job.data.username + ':project:ready', "ready");
-        }
-        job.remove(function(err){
-            if (err) throw err;
-        });
-    });
-});
-
-jobs.process('user:sync', function(job, done) {
-    user.sync(job.data.token, job.data.username, done);
-});
-
-jobs.process('project:sync', function(job, done) {
-    project.sync(job.data.token, job.data.username, job.data.repo, done);
-});
-
-jobs.process('project:autosync', function(job, done) {
-    project.autoSync(job.data.repo, done);
-});
-
-jobs.process('project:clean', function(job, done) {
-    project.clean(job.data.token, job.data.username, job.data.repo, done);
-});
-
-jobs.process('action:trigger', function(job, done) {
-    var data = JSON.parse(JSON.stringify(job.data));
-    delete data.authUser;
-    data.status_url = config.statusReceiver.replace('{jobId}', job.id);
-    data.github_oauth = job.data.authUser.token;
-    aws.config.update({
-        accessKeyId: config.worker.managerKey,
-        secretAccessKey: config.worker.managerSecret,
-        region: config.worker.region
-    });
-    var sqs = new aws.SQS();
-    var body = JSON.stringify(data);
-    body = new Buffer(body).toString('base64');
-
-    sqs.client.sendMessage({
-        QueueUrl: config.worker.queueUrl,
-        MessageBody: body
-    },  function(err, res) {
-        if (err) {
-            done(err, res);
         } else {
-            console.log('New action triggered with job id:' + job.id);
+            redisPub.publish(responseChannel, 'ready');
         }
-    });
+    };
+
+    var data = JSON.parse(message);
+    if (channel === 'user:sync') {
+        responseChannel = userResponseChannel(data);
+        user.sync(data.token, data.username, done);
+    } else if (channel === 'project:sync') {
+        responseChannel = projectResponseChannel(data);
+        project.sync(data.token, data.username, data.repo, done);
+    } else if (channel === 'project:autosync') {
+        responseChannel = projectResponseChannel(data);
+        project.autoSync(data.repo, done);
+    } else if (channel === 'project:clean') {
+        responseChannel = projectResponseChannel(data);
+        project.clean(data.token, data.username, data.repo, done);
+    } else if (channel === 'project:trigger') {
+        responseChannel = buildResponseChannel(data);
+        project.trigger(data.project, data.repo,
+                            data.branch, data.sha, data.event, done);
+    } else if (channel === 'build:status') {
+        responseChannel = buildResponseChannel(data);
+        builds.status(data.jobId, data.state, data.message, data.url, done);
+    }
 });
 console.log('Worker process started');
