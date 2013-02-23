@@ -3,8 +3,9 @@ var     config = require('../lib/config')
     ,   aws = require('aws-sdk')
     ,   GithubModel = require('../lib/model/github')
     ,   githubModel = new GithubModel(config)
+    ,   sub = factory.Redis(config)
+    ,   pub = factory.Redis(config)
     ,   redis = factory.Redis(config)
-    ,   redisPub = factory.Redis(config)
     ,   User = require('../lib/model/account').User
     ,   user = new User(config, redis)
     ,   Project = require('../lib/model/project').Project
@@ -12,14 +13,14 @@ var     config = require('../lib/config')
     ,   Builds = require('../lib/model/build')
     ,   builds = new Builds(config, redis);
 
-redisPub.subscribe('user:sync');
-redisPub.subscribe('project:sync');
-redisPub.subscribe('project:autosync');
-redisPub.subscribe('project:clean');
-redisPub.subscribe('project:trigger');
-redisPub.subscribe('build:status');
+sub.subscribe('user:sync');
+sub.subscribe('project:sync');
+sub.subscribe('project:autosync');
+sub.subscribe('project:clean');
+sub.subscribe('project:trigger');
+sub.subscribe('build:status');
 
-redisPub.on('message', function(channel, message) {
+sub.on('message', function(channel, message) {
     var responseChannel;
 
     var userResponseChannel = function(data) {
@@ -37,10 +38,10 @@ redisPub.on('message', function(channel, message) {
     var done = function(err, res) {
         if (err) {
             console.error(err);
-            redisPub.publish(responseChannel, 'error');
+            pub.publish(responseChannel, 'error');
             return;
         } else {
-            redisPub.publish(responseChannel, 'ready');
+            sub.publish(responseChannel, 'ready');
         }
     };
 
