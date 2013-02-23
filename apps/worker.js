@@ -41,7 +41,7 @@ sub.on('message', function(channel, message) {
             pub.publish(responseChannel, 'error');
             return;
         } else {
-            sub.publish(responseChannel, 'ready');
+            pub.publish(responseChannel, 'ready');
         }
     };
 
