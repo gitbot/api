@@ -57,7 +57,7 @@ module.exports = function(config) {
     function actionStatusHook(req, res) {
         var jobId = req.params.jobId;
         var status = req.body;
-        redisPub.publish('project:trigger', JSON.stringify({
+        redisPub.publish('build:status', JSON.stringify({
             jobId: jobId,
             state: status.state,
             message: status.message,
