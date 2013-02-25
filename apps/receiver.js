@@ -16,42 +16,66 @@ module.exports = function(config) {
         res.send({success: true});
     }
 
-    function triggerProjectAction(proj, repo, branch, sha, event, res) {
-        redisPub.publish('project:trigger', JSON.stringify({
-            project: proj,
-            repo: repo,
-            branch: branch,
-            sha: sha,
-            event: event
-        }));
+    function triggerProjectAction(data, res) {
+        if (data.event === 'push') {
+            data.fetch = data.sha;
+        } else {
+            data.fetch = 'refs/pull/' + data.number + '/head';
+        }
+
+        if (data.action && data.action === 'closed') {
+            redisPub.publish('project:clean', JSON.stringify(data));
+        } else {
+            redisPub.publish('project:trigger', JSON.stringify(data));
+        }
         res.send({success: true});
     }
 
     function actionTriggerHook(req, res) {
-        var     proj = req.params.project
-            ,   repo = req.body.repo
-            ,   branch = req.body.branch
-            ,   sha = req.body.sha
-            ,   event = req.body.event;
-        triggerProjectAction(proj, repo, branch, sha, event, res);
+
+        var data = {
+            project: req.params.project,
+            repo: req.body.repo,
+            branch: req.body.branch,
+            sha: req.body.sha,
+            event: req.body.event
+        };
+
+        if (data.event !== 'push') {
+            data.source = req.body.source;
+            data.action = req.body.action;
+            data.number = req.body.number;
+        }
+
+        triggerProjectAction(data, res);
     }
 
     function actionHook(req, res) {
-        var     repo, branch, sha
-            ,   proj = req.params.project
-            ,   event = req.params.event;
+        var     result = {}
+            ,   data = req.body;
 
-        if (event === 'push') {
-                repo = req.body.repository.owner.name + '/' + req.body.repository.name
-            ,   branch = req.body.ref
-            ,   sha = req.body.after;
+        result.project = req.params.project;
+        result.event = req.params.event;
+
+
+        if (result.event === 'push') {
+            result.repo = data.repository.owner.name + '/' +
+                            data.repository.name;
+            result.branch = data.ref;
+            result.sha = data.after;
         } else {
-                repo = req.body.pull_request.head.repo.full_name
-            ,   branch = req.body.pull_request.head.ref
-            ,   sha = req.body.pull_request.head.sha;
+            result.repo = data.pull_request.base.repo.full_name;
+            result.branch = data.pull_request.base.repo.ref;
+            result.sha = data.pull_request.base.sha;
+            result.action = data.action;
+            result.number = data.number;
+            result.source = {
+                repo: data.pull_request.head.repo.full_name,
+                branch: data.pull_request.head.repo.ref,
+                sha: data.pull_request.head.sha
+            };
         }
-        branch = branch.replace('refs/heads/',  '');
-        triggerProjectAction(proj, repo, branch, sha, event, res);
+        triggerProjectAction(result, res);
     }
 
     function actionStatusHook(req, res) {
