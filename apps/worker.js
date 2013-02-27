@@ -60,8 +60,7 @@ sub.on('message', function(channel, message) {
         project.clean(data.token, data.username, data.repo, done);
     } else if (channel === 'project:trigger') {
         responseChannel = buildResponseChannel(data);
-        project.trigger(data.project, data.repo,
-                            data.branch, data.sha, data.event, done);
+        project.trigger(data, done);
     } else if (channel === 'build:status') {
         responseChannel = buildResponseChannel(data);
         builds.status(data.jobId, data.state, data.message, data.url, done);
