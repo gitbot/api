@@ -23,11 +23,7 @@ module.exports = function(config) {
             data.fetch = 'refs/pull/' + data.number + '/head';
         }
 
-        if (data.action && data.action === 'closed') {
-            redisPub.publish('project:clean', JSON.stringify(data));
-        } else {
-            redisPub.publish('project:trigger', JSON.stringify(data));
-        }
+        redisPub.publish('build:trigger', JSON.stringify(data));
         res.send({success: true});
     }
 
@@ -67,7 +63,7 @@ module.exports = function(config) {
             result.repo = data.pull_request.base.repo.full_name;
             result.ref = result.branch = data.pull_request.base.ref;
             result.sha = data.pull_request.base.sha;
-            result.action = data.action;
+            result.praction = data.action;
             result.number = data.number;
             result.source = {
                 repo: data.pull_request.head.repo.full_name,

@@ -17,7 +17,7 @@ sub.subscribe('user:sync');
 sub.subscribe('project:sync');
 sub.subscribe('project:autosync');
 sub.subscribe('project:clean');
-sub.subscribe('project:trigger');
+sub.subscribe('build:trigger');
 sub.subscribe('build:status');
 
 sub.on('message', function(channel, message) {
@@ -58,7 +58,7 @@ sub.on('message', function(channel, message) {
     } else if (channel === 'project:clean') {
         responseChannel = projectResponseChannel(data);
         project.clean(data.token, data.username, data.repo, done);
-    } else if (channel === 'project:trigger') {
+    } else if (channel === 'build:trigger') {
         responseChannel = buildResponseChannel(data);
         project.trigger(data, done);
     } else if (channel === 'build:status') {
