@@ -33,13 +33,14 @@ module.exports = function(config) {
             project: req.params.project,
             repo: req.body.repo,
             branch: req.body.branch,
+            ref: req.body.ref,
             sha: req.body.sha,
             event: req.body.event
         };
 
         if (data.event !== 'push') {
             data.source = req.body.source;
-            data.action = req.body.action;
+            data.praction = req.body.action;
             data.number = req.body.number;
         }
 
