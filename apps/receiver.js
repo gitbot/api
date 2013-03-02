@@ -57,17 +57,19 @@ module.exports = function(config) {
         if (result.event === 'push') {
             result.repo = data.repository.owner.name + '/' +
                             data.repository.name;
-            result.ref = result.branch = data.ref;
+            result.ref = data.ref;
+            result.branch = data.ref.replace('refs/heads/','');
             result.sha = data.after;
         } else {
             result.repo = data.pull_request.base.repo.full_name;
-            result.ref = result.branch = data.pull_request.base.ref;
+            result.ref = data.pull_request.base.ref;
+            result.branch = result.ref.replace('refs/heads/','');
             result.sha = data.pull_request.base.sha;
             result.praction = data.action;
             result.number = data.number;
             result.source = {
                 repo: data.pull_request.head.repo.full_name,
-                branch: data.pull_request.head.ref,
+                branch: data.pull_request.head.ref.replace('refs/heads/',''),
                 sha: data.pull_request.head.sha,
                 ref: data.pull_request.head.ref
             };
