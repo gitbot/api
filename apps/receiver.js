@@ -12,7 +12,7 @@ module.exports = function(config) {
 
     function projectHook(req, res) {
         var repo = req.body.repository.owner.name + '/' + req.body.repository.name;
-        redisPub.publish('project:autosync', repo);
+        redisPub.publish('project:autosync', {repo: repo});
         res.send({success: true});
     }
 
