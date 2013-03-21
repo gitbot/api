@@ -38,7 +38,7 @@ module.exports = function(config) {
             event: req.body.event
         };
 
-        if (data.event !== 'push') {
+        if (data.event === 'pull_request') {
             data.source = req.body.source;
             data.praction = req.body.action;
             data.number = req.body.number;
