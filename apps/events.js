@@ -12,29 +12,18 @@ module.exports.listen = function(app, config) {
         ,   projectReadyPattern = '*' + projectReady
         ,   buildStatus = ':build:status'
         ,   buildStatusPattern = '*' + buildStatus
-        ,   io = require('socket.io').listen(app, conf)
         ,   users = new (require('../lib/model/account')).User(config, redis);
 
-
-    io.configure('production', function(){
-        io.enable('browser client minification');  // send minified client
-        io.enable('browser client etag');          // apply etag caching logic based on version number
-        io.enable('browser client gzip');          // gzip the file
-        io.set('log level', 1);
-
-        io.set('transports', [
+    io = require('socket.io')({
+        'transports': [
                 'websocket'
             ,   'flashsocket'
             ,   'htmlfile'
             ,   'xhr-polling'
             ,   'jsonp-polling'
-        ]);
+        ],
+        'log level': 1
     });
-
-    io.configure('development', function(){
-        io.set('transports', ['websocket']);
-    });
-
 
     sub.psubscribe(userReadyPattern);
     sub.psubscribe(projectReadyPattern);
@@ -73,4 +62,6 @@ module.exports.listen = function(app, config) {
             });
         });
     });
+
+    io.listen(app, conf);
 };

@@ -5,21 +5,23 @@
   "description": "API for gitbot.",
   "main": "app.js",
   "engines": {
-    "node": "~v0.8.20"
+    "node": "~v0.10.29"
   },
   "dependencies": {
-    "superagent": "~0.9.5",
-    "async": "~0.2.5",
-    "qs": "~0.5.1",
-    "express": "~3.1.0",
-    "redis": "~0.8.2",
-    "hiredis": "~0.1.14",
-    "connect-redis": "~1.4.4",
-    "js-yaml": "~2.0.2",
-    "socket.io": "~0.9.10",
-    "aws-sdk": "~0.9.3"
+    "superagent": "~0.18.2",
+    "morgan": "~1.2.2",
+    "body-parser": "~1.5.2",
+    "errorhandler": "1.1.1",
+    "async": "~0.9.0",
+    "qs": "~0.6.6",
+    "express": "~4.7.2",
+    "redis": "~0.11.0",
+    "connect-redis": "~2.0.0",
+    "js-yaml": "~3.1.0",
+    "socket.io": "~1.0.6",
+    "aws-sdk": "~2.0.9"
   },
-  "repository": "",
+  "repository": "https://github.com/gitbot/api",
   "author": "Lakshmi Vyas",
   "license": "MIT"
 }

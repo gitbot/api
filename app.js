@@ -4,6 +4,9 @@ var     express = require('express')
     ,   factory = require('./lib/factory')
     ,   redis = factory.Redis(config)
     ,   app = express()
+    ,   bodyParser = require('body-parser')
+    ,   errorHandler = require('errorhandler')
+    ,   morgan = require('morgan')
     ,   ping  = require('./lib/ping')
     ,   auth = require('./apps/auth')
     ,   events = require('./apps/events')
@@ -65,17 +68,15 @@ var responseError = function(req, res, next) {
     next();
 };
 
-app.configure(function() {
-    app.enable('trust proxy');
-    app.use(responseError);
-    app.use(express.bodyParser());
-    app.use(express.logger('dev')); // TODO: Get this from config
-    app.use(allowCrossDomain);
-    app.use(authcode(session));
-    app.use(app.router);
-    app.use(ping());
-    app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-});
+app.enable('trust proxy');
+app.use(responseError);
+app.use(bodyParser.urlencoded({extended:true}));
+app.use(bodyParser.json());
+app.use(morgan('dev')); // TODO: Get this from config
+app.use(allowCrossDomain);
+app.use(authcode(session));
+app.use(ping());
+app.use(errorHandler({ dumpExceptions: true, showStack: true }));
 
 app.use('/auth', auth(config));
 app.use('/user', user(config));

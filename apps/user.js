@@ -117,7 +117,7 @@ module.exports = function(config) {
     app.get(routes.projects, restrict, getProjects);
     app.put(routes.project, restrict, addProject);
     app.patch(routes.project, restrict, syncProject);
-    app.del(routes.project, restrict, deleteProject);
+    app.delete(routes.project, restrict, deleteProject);
 
     return app;
 };
